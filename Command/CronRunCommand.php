@@ -58,15 +58,21 @@ class CronRunCommand extends ContainerAwareCommand
         
         foreach($jobsToRun as $job)
         {
-            $this->runJob($job, $output, $em);
+            $this->runJob($job, $output);
+            $em->persist($job);
+        }
+        try {
+            $em->flush();
+            $end = microtime(true);
+            $duration = sprintf("%0.2f", $end-$start);
+            $output->writeln("Cron run completed in $duration seconds");
+        } catch (\Exception $ex) {
+            $output->writeln($ex->getMessage());
         }
 
-        $end = microtime(true);
-        $duration = sprintf("%0.2f", $end-$start);
-        $output->writeln("Cron run completed in $duration seconds");
     }
     
-    protected function runJob(CronJob $job, OutputInterface $output, EntityManager $em)
+    protected function runJob(CronJob $job, OutputInterface $output)
     {
         $output->write("Running " . $job->getCommand() . ": ");
         
